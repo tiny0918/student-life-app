@@ -1,4 +1,4 @@
-# My AI Projects
+# student-life-app
 
 一个使用 Vite、React 和 TypeScript 创建的 Web App。
 
