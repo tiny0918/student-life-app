@@ -8,7 +8,25 @@ type SchoolFeatureKey = 'schedule' | 'homework' | 'exam' | 'notice'
 type UploadedFile = {
   name: string
   type: string
-  url: string
+  dataUrl: string
+}
+
+const scheduleFileStorageKey = 'student-life-app:schedule-file'
+const routineFileStorageKey = 'student-life-app:routine-file'
+
+const readStoredFile = (storageKey: string) => {
+  const storedFile = localStorage.getItem(storageKey)
+
+  if (!storedFile) {
+    return null
+  }
+
+  try {
+    return JSON.parse(storedFile) as UploadedFile
+  } catch {
+    localStorage.removeItem(storageKey)
+    return null
+  }
 }
 
 const schoolFeatures: Array<{
@@ -100,45 +118,69 @@ function App() {
   const [activeSchoolFeature, setActiveSchoolFeature] = useState<SchoolFeatureKey>('schedule')
   const [activeTheme, setActiveTheme] = useState<ThemeKey>('ocean')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [scheduleFile, setScheduleFile] = useState<UploadedFile | null>(null)
-  const [routineFile, setRoutineFile] = useState<UploadedFile | null>(null)
+  const [scheduleFile, setScheduleFile] = useState<UploadedFile | null>(() =>
+    readStoredFile(scheduleFileStorageKey),
+  )
+  const [routineFile, setRoutineFile] = useState<UploadedFile | null>(() =>
+    readStoredFile(routineFileStorageKey),
+  )
   const currentTab = tabs.find((tab) => tab.key === activeTab) ?? tabs[0]
   const currentSchoolFeature =
     schoolFeatures.find((feature) => feature.key === activeSchoolFeature) ?? schoolFeatures[0]
 
   useEffect(() => {
-    return () => {
-      if (scheduleFile) {
-        URL.revokeObjectURL(scheduleFile.url)
-      }
-
-      if (routineFile) {
-        URL.revokeObjectURL(routineFile.url)
-      }
+    if (scheduleFile) {
+      localStorage.setItem(scheduleFileStorageKey, JSON.stringify(scheduleFile))
+    } else {
+      localStorage.removeItem(scheduleFileStorageKey)
     }
-  }, [scheduleFile, routineFile])
+  }, [scheduleFile])
 
-  const createFileChangeHandler = (
-    currentFile: UploadedFile | null,
+  useEffect(() => {
+    if (routineFile) {
+      localStorage.setItem(routineFileStorageKey, JSON.stringify(routineFile))
+    } else {
+      localStorage.removeItem(routineFileStorageKey)
+    }
+  }, [routineFile])
+
+  const readFileToState = (
+    file: File,
     setCurrentFile: React.Dispatch<React.SetStateAction<UploadedFile | null>>,
+    input: HTMLInputElement,
   ) => {
-    return (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0]
+    const reader = new FileReader()
 
-      if (!file) {
-        return
-      }
-
-      if (currentFile) {
-        URL.revokeObjectURL(currentFile.url)
-      }
-
+    reader.onload = () => {
       setCurrentFile({
         name: file.name,
         type: file.type,
-        url: URL.createObjectURL(file),
+        dataUrl: String(reader.result),
       })
+      input.value = ''
     }
+
+    reader.readAsDataURL(file)
+  }
+
+  const handleScheduleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    if (file) {
+      readFileToState(file, setScheduleFile, event.target)
+    }
+  }
+
+  const handleRoutineFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    if (file) {
+      readFileToState(file, setRoutineFile, event.target)
+    }
+  }
+
+  const deleteFile = (setCurrentFile: React.Dispatch<React.SetStateAction<UploadedFile | null>>) => {
+    setCurrentFile(null)
   }
 
   return (
@@ -244,7 +286,7 @@ function App() {
                           <input
                             accept="image/*,.pdf,application/pdf"
                             id="schedule-file"
-                            onChange={createFileChangeHandler(scheduleFile, setScheduleFile)}
+                            onChange={handleScheduleFileChange}
                             type="file"
                           />
 
@@ -255,7 +297,7 @@ function App() {
                           <input
                             accept="image/*,.pdf,application/pdf"
                             id="routine-file"
-                            onChange={createFileChangeHandler(routineFile, setRoutineFile)}
+                            onChange={handleRoutineFileChange}
                             type="file"
                           />
                         </div>
@@ -266,13 +308,21 @@ function App() {
                               <div className="schedule-preview">
                                 <div className="schedule-file-info">
                                   <span aria-hidden="true">📄</span>
+                                  <em>课程表</em>
                                   <strong>{scheduleFile.name}</strong>
+                                  <button
+                                    className="delete-upload-button"
+                                    onClick={() => deleteFile(setScheduleFile)}
+                                    type="button"
+                                  >
+                                    删除
+                                  </button>
                                 </div>
 
                                 {scheduleFile.type.startsWith('image/') ? (
-                                  <img alt="上传的课程表预览" src={scheduleFile.url} />
+                                  <img alt="上传的课程表预览" src={scheduleFile.dataUrl} />
                                 ) : (
-                                  <a href={scheduleFile.url} rel="noreferrer" target="_blank">
+                                  <a href={scheduleFile.dataUrl} rel="noreferrer" target="_blank">
                                     打开课程表 PDF
                                   </a>
                                 )}
@@ -283,13 +333,21 @@ function App() {
                               <div className="schedule-preview">
                                 <div className="schedule-file-info">
                                   <span aria-hidden="true">📄</span>
+                                  <em>作息表</em>
                                   <strong>{routineFile.name}</strong>
+                                  <button
+                                    className="delete-upload-button"
+                                    onClick={() => deleteFile(setRoutineFile)}
+                                    type="button"
+                                  >
+                                    删除
+                                  </button>
                                 </div>
 
                                 {routineFile.type.startsWith('image/') ? (
-                                  <img alt="上传的作息表预览" src={routineFile.url} />
+                                  <img alt="上传的作息表预览" src={routineFile.dataUrl} />
                                 ) : (
-                                  <a href={routineFile.url} rel="noreferrer" target="_blank">
+                                  <a href={routineFile.dataUrl} rel="noreferrer" target="_blank">
                                     打开作息表 PDF
                                   </a>
                                 )}

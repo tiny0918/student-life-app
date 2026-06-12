@@ -421,6 +421,40 @@ h3 {
   color: #334155;
 }
 
+.schedule-file-info em {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.schedule-file-info strong {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-upload-button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #dc2626;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.delete-upload-button:hover {
+  background: #fecaca;
+}
+
 .schedule-preview img {
   display: block;
   width: 100%;
