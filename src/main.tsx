@@ -5,7 +5,7 @@ import './styles.css'
 type TabKey = 'school' | 'tutoring' | 'life' | 'profile'
 type ThemeKey = 'ocean' | 'sunshine' | 'forest' | 'grape'
 type SchoolFeatureKey = 'schedule' | 'homework' | 'exam' | 'notice'
-type ScheduleFile = {
+type UploadedFile = {
   name: string
   type: string
   url: string
@@ -100,7 +100,8 @@ function App() {
   const [activeSchoolFeature, setActiveSchoolFeature] = useState<SchoolFeatureKey>('schedule')
   const [activeTheme, setActiveTheme] = useState<ThemeKey>('ocean')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [scheduleFile, setScheduleFile] = useState<ScheduleFile | null>(null)
+  const [scheduleFile, setScheduleFile] = useState<UploadedFile | null>(null)
+  const [routineFile, setRoutineFile] = useState<UploadedFile | null>(null)
   const currentTab = tabs.find((tab) => tab.key === activeTab) ?? tabs[0]
   const currentSchoolFeature =
     schoolFeatures.find((feature) => feature.key === activeSchoolFeature) ?? schoolFeatures[0]
@@ -110,25 +111,34 @@ function App() {
       if (scheduleFile) {
         URL.revokeObjectURL(scheduleFile.url)
       }
+
+      if (routineFile) {
+        URL.revokeObjectURL(routineFile.url)
+      }
     }
-  }, [scheduleFile])
+  }, [scheduleFile, routineFile])
 
-  const handleScheduleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const createFileChangeHandler = (
+    currentFile: UploadedFile | null,
+    setCurrentFile: React.Dispatch<React.SetStateAction<UploadedFile | null>>,
+  ) => {
+    return (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
 
-    if (!file) {
-      return
+      if (!file) {
+        return
+      }
+
+      if (currentFile) {
+        URL.revokeObjectURL(currentFile.url)
+      }
+
+      setCurrentFile({
+        name: file.name,
+        type: file.type,
+        url: URL.createObjectURL(file),
+      })
     }
-
-    if (scheduleFile) {
-      URL.revokeObjectURL(scheduleFile.url)
-    }
-
-    setScheduleFile({
-      name: file.name,
-      type: file.type,
-      url: URL.createObjectURL(file),
-    })
   }
 
   return (
@@ -224,50 +234,84 @@ function App() {
                   </nav>
 
                   <article className="school-feature-content">
-                    <h3>{currentSchoolFeature.title}</h3>
-                    <p>{currentSchoolFeature.description}</p>
+                    {activeSchoolFeature === 'schedule' ? (
+                      <section className="schedule-upload" aria-label="课程表和作息表上传">
+                        <div className="upload-actions">
+                          <label className="upload-icon-button" htmlFor="schedule-file">
+                            <span aria-hidden="true">🖼️</span>
+                            <strong>上传课程表</strong>
+                          </label>
+                          <input
+                            accept="image/*,.pdf,application/pdf"
+                            id="schedule-file"
+                            onChange={createFileChangeHandler(scheduleFile, setScheduleFile)}
+                            type="file"
+                          />
 
-                    {activeSchoolFeature === 'schedule' && (
-                      <section className="schedule-upload" aria-label="课程表上传">
-                        <label className="upload-dropzone" htmlFor="schedule-file">
-                          <span aria-hidden="true">📎</span>
-                          <strong>上传课程表图片或 PDF</strong>
-                          <small>支持 JPG、PNG、WEBP、PDF 文件</small>
-                        </label>
-                        <input
-                          accept="image/*,.pdf,application/pdf"
-                          id="schedule-file"
-                          onChange={handleScheduleFileChange}
-                          type="file"
-                        />
+                          <label className="upload-icon-button" htmlFor="routine-file">
+                            <span aria-hidden="true">🗓️</span>
+                            <strong>上传作息表</strong>
+                          </label>
+                          <input
+                            accept="image/*,.pdf,application/pdf"
+                            id="routine-file"
+                            onChange={createFileChangeHandler(routineFile, setRoutineFile)}
+                            type="file"
+                          />
+                        </div>
 
-                        {scheduleFile && (
-                          <div className="schedule-preview">
-                            <div className="schedule-file-info">
-                              <span aria-hidden="true">📄</span>
-                              <strong>{scheduleFile.name}</strong>
-                            </div>
+                        {(scheduleFile || routineFile) && (
+                          <div className="upload-preview-grid">
+                            {scheduleFile && (
+                              <div className="schedule-preview">
+                                <div className="schedule-file-info">
+                                  <span aria-hidden="true">📄</span>
+                                  <strong>{scheduleFile.name}</strong>
+                                </div>
 
-                            {scheduleFile.type.startsWith('image/') ? (
-                              <img alt="上传的课程表预览" src={scheduleFile.url} />
-                            ) : (
-                              <a href={scheduleFile.url} rel="noreferrer" target="_blank">
-                                打开 PDF 课程表
-                              </a>
+                                {scheduleFile.type.startsWith('image/') ? (
+                                  <img alt="上传的课程表预览" src={scheduleFile.url} />
+                                ) : (
+                                  <a href={scheduleFile.url} rel="noreferrer" target="_blank">
+                                    打开课程表 PDF
+                                  </a>
+                                )}
+                              </div>
+                            )}
+
+                            {routineFile && (
+                              <div className="schedule-preview">
+                                <div className="schedule-file-info">
+                                  <span aria-hidden="true">📄</span>
+                                  <strong>{routineFile.name}</strong>
+                                </div>
+
+                                {routineFile.type.startsWith('image/') ? (
+                                  <img alt="上传的作息表预览" src={routineFile.url} />
+                                ) : (
+                                  <a href={routineFile.url} rel="noreferrer" target="_blank">
+                                    打开作息表 PDF
+                                  </a>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
                       </section>
+                    ) : (
+                      <>
+                        <h3>{currentSchoolFeature.title}</h3>
+                        <p>{currentSchoolFeature.description}</p>
+                        <div className="feature-grid school-detail-grid">
+                          {currentSchoolFeature.details.map((detail) => (
+                            <article className="feature-card" key={detail}>
+                              <span aria-hidden="true">✓</span>
+                              <strong>{detail}</strong>
+                            </article>
+                          ))}
+                        </div>
+                      </>
                     )}
-
-                    <div className="feature-grid school-detail-grid">
-                      {currentSchoolFeature.details.map((detail) => (
-                        <article className="feature-card" key={detail}>
-                          <span aria-hidden="true">✓</span>
-                          <strong>{detail}</strong>
-                        </article>
-                      ))}
-                    </div>
                   </article>
                 </div>
               ) : (

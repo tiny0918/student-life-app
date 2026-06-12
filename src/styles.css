@@ -344,8 +344,7 @@ h3 {
 
 .schedule-upload {
   display: grid;
-  gap: 16px;
-  margin-top: 22px;
+  gap: 18px;
 }
 
 .schedule-upload input {
@@ -356,41 +355,54 @@ h3 {
   pointer-events: none;
 }
 
-.upload-dropzone {
+.upload-actions {
   display: grid;
-  min-height: 150px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.upload-icon-button {
+  display: grid;
+  min-height: 148px;
   place-items: center;
   padding: 24px;
-  border: 2px dashed var(--accent-shadow);
-  border-radius: 22px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.76), var(--accent-panel));
+  border: 1px solid var(--accent-shadow);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.86), var(--accent-panel));
   color: #334155;
   cursor: pointer;
   text-align: center;
   transition:
-    border-color 160ms ease,
     box-shadow 160ms ease,
+    color 160ms ease,
     transform 160ms ease;
 }
 
-.upload-dropzone:hover {
-  border-color: var(--accent);
+.upload-icon-button:hover {
+  color: var(--accent);
   box-shadow: 0 14px 32px var(--accent-shadow);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
-.upload-dropzone span {
+.upload-icon-button span {
+  display: inline-grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 20px;
+  background: var(--accent-soft);
   font-size: 2rem;
 }
 
-.upload-dropzone strong {
+.upload-icon-button strong {
   color: #1f2937;
   font-size: 1.08rem;
 }
 
-.upload-dropzone small {
-  color: #64748b;
-  font-weight: 700;
+.upload-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
 }
 
 .schedule-preview {
@@ -410,9 +422,10 @@ h3 {
 }
 
 .schedule-preview img {
+  display: block;
   width: 100%;
-  max-height: 360px;
-  object-fit: contain;
+  height: auto;
+  max-width: 100%;
   border-radius: 16px;
   background: #ffffff;
 }
@@ -476,7 +489,9 @@ h3 {
     justify-self: start;
   }
 
-  .school-feature-tabs {
+  .school-feature-tabs,
+  .upload-actions,
+  .upload-preview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -489,7 +504,9 @@ h3 {
   .tab-list,
   .tab-panel,
   .feature-grid,
-  .school-feature-tabs {
+  .school-feature-tabs,
+  .upload-actions,
+  .upload-preview-grid {
     grid-template-columns: 1fr;
   }
 }
