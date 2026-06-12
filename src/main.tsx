@@ -1,9 +1,52 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import './styles.css'
 
 type TabKey = 'school' | 'tutoring' | 'life' | 'profile'
 type ThemeKey = 'ocean' | 'sunshine' | 'forest' | 'grape'
+type SchoolFeatureKey = 'schedule' | 'homework' | 'exam' | 'notice'
+type ScheduleFile = {
+  name: string
+  type: string
+  url: string
+}
+
+const schoolFeatures: Array<{
+  key: SchoolFeatureKey
+  label: string
+  title: string
+  description: string
+  details: string[]
+}> = [
+  {
+    key: 'schedule',
+    label: '今日课程表',
+    title: '今日课程表',
+    description: '按时间顺序查看当天课程，提前准备课本、文具和课堂任务。',
+    details: ['上午课程与上课时间', '下午课程与活动安排', '需要提前准备的学习用品'],
+  },
+  {
+    key: 'homework',
+    label: '家庭作业清单',
+    title: '家庭作业清单',
+    description: '集中记录各科作业，完成后逐项打勾，减少遗漏。',
+    details: ['语文、数学、英语作业', '预计完成时间', '家长检查与订正提醒'],
+  },
+  {
+    key: 'exam',
+    label: '考试与测验提醒',
+    title: '考试与测验提醒',
+    description: '提前整理考试时间、范围和复习重点，帮助孩子从容准备。',
+    details: ['近期测验日期', '复习内容和重点', '错题回顾计划'],
+  },
+  {
+    key: 'notice',
+    label: '老师通知记录',
+    title: '老师通知记录',
+    description: '保存老师发布的重要通知，方便家长随时查看和跟进。',
+    details: ['班级活动通知', '资料提交提醒', '需要家长配合的事项'],
+  },
+]
 
 const tabs: Array<{
   key: TabKey
@@ -54,9 +97,39 @@ const themes: Array<{
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('school')
+  const [activeSchoolFeature, setActiveSchoolFeature] = useState<SchoolFeatureKey>('schedule')
   const [activeTheme, setActiveTheme] = useState<ThemeKey>('ocean')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [scheduleFile, setScheduleFile] = useState<ScheduleFile | null>(null)
   const currentTab = tabs.find((tab) => tab.key === activeTab) ?? tabs[0]
+  const currentSchoolFeature =
+    schoolFeatures.find((feature) => feature.key === activeSchoolFeature) ?? schoolFeatures[0]
+
+  useEffect(() => {
+    return () => {
+      if (scheduleFile) {
+        URL.revokeObjectURL(scheduleFile.url)
+      }
+    }
+  }, [scheduleFile])
+
+  const handleScheduleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    if (scheduleFile) {
+      URL.revokeObjectURL(scheduleFile.url)
+    }
+
+    setScheduleFile({
+      name: file.name,
+      type: file.type,
+      url: URL.createObjectURL(file),
+    })
+  }
 
   return (
     <main className={`app-shell theme-${activeTheme}`}>
@@ -123,20 +196,90 @@ function App() {
               ))}
             </nav>
 
-            <section className="tab-panel">
-              <div>
-                <h2>{currentTab.title}</h2>
-                <p>{currentTab.description}</p>
-              </div>
+            <section className={activeTab === 'school' ? 'tab-panel school-panel' : 'tab-panel'}>
+              {activeTab !== 'school' && (
+                <div>
+                  <h2>{currentTab.title}</h2>
+                  <p>{currentTab.description}</p>
+                </div>
+              )}
 
-              <div className="feature-grid">
-                {currentTab.items.map((item) => (
-                  <article className="feature-card" key={item}>
-                    <span aria-hidden="true">✓</span>
-                    <strong>{item}</strong>
+              {activeTab === 'school' ? (
+                <div className="school-feature-layout">
+                  <nav className="school-feature-tabs" aria-label="校内学习功能切换">
+                    {schoolFeatures.map((feature) => (
+                      <button
+                        className={
+                          feature.key === activeSchoolFeature
+                            ? 'school-feature-tab active'
+                            : 'school-feature-tab'
+                        }
+                        key={feature.key}
+                        onClick={() => setActiveSchoolFeature(feature.key)}
+                        type="button"
+                      >
+                        {feature.label}
+                      </button>
+                    ))}
+                  </nav>
+
+                  <article className="school-feature-content">
+                    <h3>{currentSchoolFeature.title}</h3>
+                    <p>{currentSchoolFeature.description}</p>
+
+                    {activeSchoolFeature === 'schedule' && (
+                      <section className="schedule-upload" aria-label="课程表上传">
+                        <label className="upload-dropzone" htmlFor="schedule-file">
+                          <span aria-hidden="true">📎</span>
+                          <strong>上传课程表图片或 PDF</strong>
+                          <small>支持 JPG、PNG、WEBP、PDF 文件</small>
+                        </label>
+                        <input
+                          accept="image/*,.pdf,application/pdf"
+                          id="schedule-file"
+                          onChange={handleScheduleFileChange}
+                          type="file"
+                        />
+
+                        {scheduleFile && (
+                          <div className="schedule-preview">
+                            <div className="schedule-file-info">
+                              <span aria-hidden="true">📄</span>
+                              <strong>{scheduleFile.name}</strong>
+                            </div>
+
+                            {scheduleFile.type.startsWith('image/') ? (
+                              <img alt="上传的课程表预览" src={scheduleFile.url} />
+                            ) : (
+                              <a href={scheduleFile.url} rel="noreferrer" target="_blank">
+                                打开 PDF 课程表
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </section>
+                    )}
+
+                    <div className="feature-grid school-detail-grid">
+                      {currentSchoolFeature.details.map((detail) => (
+                        <article className="feature-card" key={detail}>
+                          <span aria-hidden="true">✓</span>
+                          <strong>{detail}</strong>
+                        </article>
+                      ))}
+                    </div>
                   </article>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="feature-grid">
+                  {currentTab.items.map((item) => (
+                    <article className="feature-card" key={item}>
+                      <span aria-hidden="true">✓</span>
+                      <strong>{item}</strong>
+                    </article>
+                  ))}
+                </div>
+              )}
             </section>
           </>
         )}
